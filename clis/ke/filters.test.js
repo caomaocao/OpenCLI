@@ -1,0 +1,56 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildErshoufangFilterPath,
+  ORIENTATION, FLOOR, AGE, DECORATION, ELEVATOR, FEATURES, USAGE, SORT,
+} from './filters.js';
+
+describe('buildErshoufangFilterPath', () => {
+  it('returns empty string when nothing is active', () => {
+    expect(buildErshoufangFilterPath({})).toBe('');
+  });
+
+  // ── Golden tests on confirmed anchors (de3 / l3 / p / co32) ──
+  it('encodes rooms as l{n}', () => {
+    expect(buildErshoufangFilterPath({ rooms: 3 })).toBe('l3');
+  });
+  it('encodes decoration=rough as de3', () => {
+    expect(buildErshoufangFilterPath({ decoration: 'rough' })).toBe('de3');
+  });
+  it('encodes sort=newest as co32', () => {
+    expect(buildErshoufangFilterPath({ sort: 'newest' })).toBe('co32');
+  });
+  it('keeps the existing price encoding p{min}t{max}', () => {
+    expect(buildErshoufangFilterPath({ 'min-price': 100, 'max-price': 300 })).toBe('p100t300');
+  });
+  it('encodes area range as ba{min}ea{max}', () => {
+    expect(buildErshoufangFilterPath({ 'min-area': 70, 'max-area': 120 })).toBe('ba70ea120');
+  });
+
+  // ── Parametric tests: derive expected from the tables (robust to verified codes) ──
+  it('maps each single-value enum through its own table', () => {
+    expect(buildErshoufangFilterPath({ orientation: 'south' })).toBe(ORIENTATION.south);
+    expect(buildErshoufangFilterPath({ floor: 'high' })).toBe(FLOOR.high);
+    expect(buildErshoufangFilterPath({ age: '10' })).toBe(AGE['10']);
+    expect(buildErshoufangFilterPath({ elevator: 'yes' })).toBe(ELEVATOR.yes);
+    expect(buildErshoufangFilterPath({ usage: 'villa' })).toBe(USAGE.villa);
+    expect(buildErshoufangFilterPath({ sort: 'total-price-asc' })).toBe(SORT['total-price-asc']);
+  });
+
+  it('splits --features and emits feature codes in table-definition order', () => {
+    // input order reversed; output must follow FEATURES key order
+    const expected = FEATURES['near-subway'] + FEATURES.vr;
+    expect(buildErshoufangFilterPath({ features: 'vr,near-subway' })).toBe(expected);
+  });
+  it('throws ArgumentError on an unknown feature keyword', () => {
+    expect(() => buildErshoufangFilterPath({ features: 'bogus' })).toThrow(/unknown/i);
+  });
+  it('trims and ignores blank feature entries', () => {
+    expect(buildErshoufangFilterPath({ features: ' vr , ' })).toBe(FEATURES.vr);
+  });
+
+  // ── Canonical order across categories (uses only confirmed anchors) ──
+  it('emits codes in canonical order regardless of kwargs key order', () => {
+    const out = buildErshoufangFilterPath({ rooms: 3, decoration: 'rough', sort: 'newest' });
+    expect(out).toBe('co32de3l3');
+  });
+});

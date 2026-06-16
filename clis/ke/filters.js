@@ -4,10 +4,10 @@ import { ArgumentError } from '@jackwener/opencli/errors';
 export const ORIENTATION = {
   'south-north': 'f5', south: 'f2', east: 'f1', north: 'f4', west: 'f3',
 };
-// ⚠️ FLOOR codes are still unverified guesses (left blank during live verification).
+// low=lc1 verified; mid/high (lc2/lc3) inferred from the lc-prefix pattern.
 export const FLOOR = { low: 'lc1', mid: 'lc2', high: 'lc3' };
 export const AGE = { '5': 'y1', '10': 'y2', '15': 'y3', '20': 'y4', '20+': 'y5' };
-// de3 (rough/毛坯) verified; de1/de2 (精装/普通) still unverified guesses.
+// de1 (精装) and de3 (毛坯) verified; de2 (普通) inferred from the de-prefix pattern.
 export const DECORATION = { fine: 'de1', simple: 'de2', rough: 'de3' };
 export const ELEVATOR = { yes: 'ie2', no: 'ie1' };
 // 房源特色 (multi-select). Iteration order here IS the emit order.
@@ -74,20 +74,24 @@ function featuresCode(raw) {
   return Object.keys(FEATURES).filter((k) => requested.has(k)).map((k) => FEATURES[k]).join('');
 }
 
-// Canonical left-to-right order Beike concatenates prefixes in.
-// Verified anchors: co < features < elevator < area < rooms < price; co < decoration < rooms
-// (from co32de3l3, de3l3p1, co32mw1ie2ba79ea90l3). The relative positions of
-// orientation/floor/age/usage are inferred from the UI grouping and satisfy every
-// observed constraint; pin them with one more multi-filter URL if needed.
+// Canonical left-to-right order Beike concatenates prefixes in. This linear order
+// satisfies every captured sample:
+//   co32de3l3, de3l3p1, co32mw1ie2ba79ea90l3, sf1de1y1lc1f2
+// i.e. sort < {usage<decoration<age<floor<orientation} < features < elevator < area
+//        < rooms < price.
+// The two sample groups (usage/decoration/age/floor/orientation vs
+// features/elevator/area/rooms) never co-occurred, so their interleaving is one
+// evidence-consistent extension. Beike parses codes by prefix, so order does not affect
+// which filters apply — confirmed by the live smoke.
 const SEGMENT_PRODUCERS = [
   (k) => lookup(SORT, k.sort),
-  (k) => featuresCode(k.features),
-  (k) => lookup(ORIENTATION, k.orientation),
-  (k) => lookup(FLOOR, k.floor),
-  (k) => lookup(AGE, k.age),
-  (k) => lookup(DECORATION, k.decoration),
-  (k) => lookup(ELEVATOR, k.elevator),
   (k) => lookup(USAGE, k.usage),
+  (k) => lookup(DECORATION, k.decoration),
+  (k) => lookup(AGE, k.age),
+  (k) => lookup(FLOOR, k.floor),
+  (k) => lookup(ORIENTATION, k.orientation),
+  (k) => featuresCode(k.features),
+  (k) => lookup(ELEVATOR, k.elevator),
   (k) => areaCode(k),
   (k) => roomsCode(k.rooms),
   (k) => priceCode(k),

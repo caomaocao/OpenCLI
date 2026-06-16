@@ -44,7 +44,12 @@ function lookup(table, key) {
 }
 
 function roomsCode(rooms) {
-  return rooms ? `l${rooms}` : '';
+  if (!present(rooms)) return '';
+  const n = Number(rooms);
+  if (!Number.isInteger(n) || n < 1 || n > 5) {
+    throw new ArgumentError(`--rooms must be an integer 1-5. Received: "${rooms}"`);
+  }
+  return `l${n}`;
 }
 
 function priceCode(kwargs) {

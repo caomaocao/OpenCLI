@@ -1,7 +1,14 @@
+import { ArgumentError } from '@jackwener/opencli/errors';
+
 // keyword → Beike code for chengjiao (成交记录). Anchors l3/sf1/de3/lc1 confirmed live on
-// sh.ke.com/chengjiao (Task 1); the rest match ershoufang's already-verified residential
-// codes (same domain + scheme). Verified independently — this module does not import
-// ershoufang's filters.js.
+// sh.ke.com/chengjiao (Task 1). The remaining codes are inherited from ershoufang's
+// already-verified residential scheme on the SAME domain ({city}.ke.com): ORIENTATION,
+// AGE, DECORATION, USAGE, ELEVATOR and SORT. Two of these are worth singling out as
+// inherited-not-independently-confirmed-on-chengjiao (the chengjiao smoke was captcha-blocked):
+//   - ELEVATOR { yes: 'ie2', no: 'ie1' } — note yes=2 (verified on ershoufang, not inverted by mistake).
+//   - SORT 'co{field}{dir}' — these are field+direction codes, NOT positional tab indices, so
+//     chengjiao lacking the 最新发布 tab does not renumber 总价/单价/面积.
+// Verified independently where possible — this module does not import ershoufang's filters.js.
 export const ORIENTATION = {
   'south-north': 'f5', south: 'f2', east: 'f1', north: 'f4', west: 'f3',
 };
@@ -27,7 +34,13 @@ function lookup(table, key) {
   return table[String(key)] || '';
 }
 function roomsCode(rooms) {
-  return present(rooms) ? `l${rooms}` : '';
+  if (!present(rooms)) return '';
+  // chengjiao 房型 is one-based: 一室=l1 .. 五室=l5 (unlike zufang's zero-based l(n-1)).
+  const n = Number(rooms);
+  if (!Number.isInteger(n) || n < 1 || n > 5) {
+    throw new ArgumentError(`--rooms must be an integer 1-5. Received: "${rooms}"`);
+  }
+  return `l${n}`;
 }
 function areaCode(kwargs) {
   const min = kwargs['min-area'];

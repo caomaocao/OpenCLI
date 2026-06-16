@@ -35,6 +35,11 @@ describe('buildZufangFilterPath — behavior', () => {
     expect(buildZufangFilterPath({ rooms: 2 })).toBe('l1');
     expect(buildZufangFilterPath({ rooms: 4 })).toBe('l3');
   });
+  it('rejects out-of-range or non-numeric rooms instead of emitting garbage', () => {
+    expect(() => buildZufangFilterPath({ rooms: 0 })).toThrow(/rooms/);
+    expect(() => buildZufangFilterPath({ rooms: 5 })).toThrow(/rooms/);
+    expect(() => buildZufangFilterPath({ rooms: 'abc' })).toThrow(/rooms/);
+  });
   it('keeps the existing rent encoding rp{min}t{max}', () => {
     expect(buildZufangFilterPath({ 'min-price': 2000, 'max-price': 8000 })).toBe('rp2000t8000');
   });

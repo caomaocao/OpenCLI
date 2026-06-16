@@ -35,6 +35,11 @@ describe('buildChengjiaoFilterPath — behavior', () => {
     expect(buildChengjiaoFilterPath({ usage: 'villa' })).toBe(USAGE.villa);
     expect(buildChengjiaoFilterPath({ sort: 'total-price-asc' })).toBe(SORT['total-price-asc']);
   });
+  it('rejects out-of-range or non-numeric rooms instead of emitting garbage', () => {
+    expect(() => buildChengjiaoFilterPath({ rooms: 0 })).toThrow(/rooms/);
+    expect(() => buildChengjiaoFilterPath({ rooms: 6 })).toThrow(/rooms/);
+    expect(() => buildChengjiaoFilterPath({ rooms: 'abc' })).toThrow(/rooms/);
+  });
   it('encodes a two-sided area range', () => {
     expect(buildChengjiaoFilterPath({ 'min-area': 70, 'max-area': 90 })).toBe('ba70ea90');
   });

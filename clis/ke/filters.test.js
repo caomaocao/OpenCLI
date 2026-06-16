@@ -13,6 +13,11 @@ describe('buildErshoufangFilterPath', () => {
   it('encodes rooms as l{n}', () => {
     expect(buildErshoufangFilterPath({ rooms: 3 })).toBe('l3');
   });
+  it('rejects out-of-range or non-numeric rooms instead of emitting garbage', () => {
+    expect(() => buildErshoufangFilterPath({ rooms: 0 })).toThrow(/rooms/);
+    expect(() => buildErshoufangFilterPath({ rooms: 6 })).toThrow(/rooms/);
+    expect(() => buildErshoufangFilterPath({ rooms: 'abc' })).toThrow(/rooms/);
+  });
   it('encodes decoration=rough as de3', () => {
     expect(buildErshoufangFilterPath({ decoration: 'rough' })).toBe('de3');
   });

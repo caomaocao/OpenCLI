@@ -46,8 +46,13 @@ function lookup(table, key) {
   return table[String(key)] || '';
 }
 function roomsCode(rooms) {
+  if (!present(rooms)) return '';
   // zufang 户型 is zero-based: 一居=l0, 两居=l1, 三居=l2, 四居+=l3.
-  return present(rooms) ? `l${Number(rooms) - 1}` : '';
+  const n = Number(rooms);
+  if (!Number.isInteger(n) || n < 1 || n > 4) {
+    throw new ArgumentError(`--rooms must be an integer 1-4 (4 = 四居+). Received: "${rooms}"`);
+  }
+  return `l${n - 1}`;
 }
 function rentCode(kwargs) {
   // Unchanged from the original zufang.js — kept exactly as-is per the spec.
